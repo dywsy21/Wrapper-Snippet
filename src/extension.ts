@@ -120,45 +120,40 @@ async function addImportStatement(document: vscode.TextDocument, editor: vscode.
 
     const text = document.getText();
     const usePattern = /^use\s+([\w:]+)(::\{([\w\s,]*)\})?;/gm;
+    const importsMap = new Map<string, Set<string>>();
     let match;
-    let importFound = false;
     let lastUseLine = 0;
-    let existingImports = new Map<string, Set<string>>();
 
-    // Parse and store existing use statements
+    // Parse existing use statements into a tree-like structure
     while ((match = usePattern.exec(text)) !== null) {
         lastUseLine = document.positionAt(match.index).line;
         const base = match[1];
-        const imports = match[3] ? match[3].split(',').map(item => item.trim()) : [];
-
-        if (!existingImports.has(base)) {
-            existingImports.set(base, new Set(imports));
+        const items = match[3] ? match[3].split(',').map(item => item.trim()) : [];
+        
+        if (!importsMap.has(base)) {
+            importsMap.set(base, new Set(items));
         } else {
-            imports.forEach(imp => existingImports.get(base)!.add(imp));
+            items.forEach(item => importsMap.get(base)!.add(item));
         }
     }
 
+    // Break down the new import statement
     const importParts = importStatement.replace('use ', '').replace(';', '').split('::{');
     const newBase = importParts[0];
-    const newImports = importParts[1] ? importParts[1].replace(/[{}]/g, '').split(',').map(item => item.trim()) : [];
-
-    // Merge with existing imports
-    if (existingImports.has(newBase)) {
-        newImports.forEach(imp => existingImports.get(newBase)!.add(imp));
-        importFound = true;
-    } else if (newImports.length > 0) {
-        existingImports.set(newBase, new Set(newImports));
+    const newItems = importParts.length > 1 ? importParts[1].replace(/[{}]/g, '').split(',').map(item => item.trim()) : [];
+    
+    // Determine if the new import needs to be merged with existing ones
+    if (!importsMap.has(newBase)) {
+        importsMap.set(newBase, new Set(newItems));
+    } else {
+        newItems.forEach(item => importsMap.get(newBase)!.add(item));
     }
 
-    // Construct updated use statements
-    const newUseStatements = Array.from(existingImports.entries()).map(([base, items]) => {
+    // Reconstruct the use statements in a concise manner
+    const newUseStatements = Array.from(importsMap.entries()).map(([base, items]) => {
         const itemList = Array.from(items).join(', ');
-        return items.size > 0 ? `use ${base}::{${itemList}};` : `use ${base};`;
+        return items.size ? `use ${base}::{${itemList}};` : `use ${base};`;
     });
-
-    if (!importFound && importParts[1]) {
-        newUseStatements.push(importStatement);
-    }
 
     await editor.edit(editBuilder => {
         const insertionPosition = lastUseLine > 0 ? new vscode.Position(lastUseLine + 1, 0) : new vscode.Position(0, 0);
