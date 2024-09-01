@@ -146,11 +146,11 @@ async function addImportStatement(document: vscode.TextDocument, editor: vscode.
 
     // Break down the new import statement
     const importParts = importStatement.replace('use ', '').replace(';', '').split('::');
-    const baseParts = importParts.slice(0, -1);
-    const newItem = importParts[importParts.length - 1].replace(/[{}]/g, '');
+    const newItems = importParts.pop()?.replace(/[{}]/g, '').split(',').map(item => item.trim()) || [];
+    const baseParts = importParts;
 
-    // Add the new import to the tree
-    addToTree(baseParts, newItem);
+    // Add the new imports to the tree
+    newItems.forEach(item => addToTree(baseParts, item));
 
     // Function to recursively build use statements from the tree
     function buildUseStatements(node: Map<string, any>, prefix: string): string[] {
@@ -159,9 +159,9 @@ async function addImportStatement(document: vscode.TextDocument, editor: vscode.
             if (value && value.size > 0) {
                 const subStatements = buildUseStatements(value, `${prefix}${key}::`);
                 if (subStatements.length > 0) {
-                    statements.push(`use ${prefix}${key}::{${subStatements.join(', ')}};`);
+                    statements.push(`${key}::{${subStatements.join(', ')}}`);
                 } else {
-                    statements.push(`use ${prefix}${key};`);
+                    statements.push(`${key}`);
                 }
             } else {
                 statements.push(`${key}`);
@@ -170,7 +170,7 @@ async function addImportStatement(document: vscode.TextDocument, editor: vscode.
         return statements;
     }
 
-    const newUseStatements = buildUseStatements(importTree, '');
+    const newUseStatements = buildUseStatements(importTree, 'use ');
 
     await editor.edit(editBuilder => {
         const insertionPosition = lastUseLine > 0 ? new vscode.Position(lastUseLine + 1, 0) : new vscode.Position(0, 0);
