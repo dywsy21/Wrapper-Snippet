@@ -119,55 +119,50 @@ async function addImportStatement(document: vscode.TextDocument, editor: vscode.
     }
 
     const text = document.getText();
-    const usePattern = /use\s+([\w:]+)(::\{[\w,\s]+\})?;/g;
+    const usePattern = /^use\s+([\w:]+)(::\{([\w\s,]*)\})?;/gm;
     let match;
     let importFound = false;
     let lastUseLine = 0;
-    let existingImports: { [key: string]: string[] } = {};
+    let existingImports = new Map<string, Set<string>>();
 
-    // Parse existing use statements
+    // Parse and store existing use statements
     while ((match = usePattern.exec(text)) !== null) {
         lastUseLine = document.positionAt(match.index).line;
-        const [_, base, imports] = match;
-        if (imports) {
-            const importedItems = imports.replace(/[{}]/g, '').split(',').map(item => item.trim());
-            existingImports[base] = importedItems;
+        const base = match[1];
+        const imports = match[3] ? match[3].split(',').map(item => item.trim()) : [];
+
+        if (!existingImports.has(base)) {
+            existingImports.set(base, new Set(imports));
         } else {
-            existingImports[base] = [];
+            imports.forEach(imp => existingImports.get(base)!.add(imp));
         }
     }
 
-    const [newBase, newImport] = importStatement.replace('use ', '').replace(';', '').split('::{');
+    const importParts = importStatement.replace('use ', '').replace(';', '').split('::{');
+    const newBase = importParts[0];
+    const newImports = importParts[1] ? importParts[1].replace(/[{}]/g, '').split(',').map(item => item.trim()) : [];
 
-    // Merge new import
-    if (existingImports[newBase]) {
-        if (newImport) {
-            const newItems = newImport.replace(/[{}]/g, ''). split(',').map(item => item.trim());
-            existingImports[newBase] = Array.from(new Set([...existingImports[newBase], ...newItems]));
-        }
+    // Merge with existing imports
+    if (existingImports.has(newBase)) {
+        newImports.forEach(imp => existingImports.get(newBase)!.add(imp));
         importFound = true;
+    } else if (newImports.length > 0) {
+        existingImports.set(newBase, new Set(newImports));
     }
 
-    // Construct new use statements
-    const newUseStatements = Object.entries(existingImports).map(([base, items]) => {
-        if (items.length > 0) {
-            return `use ${base}::{${items.join(', ')}};`;
-        }
-        return `use ${base};`;
+    // Construct updated use statements
+    const newUseStatements = Array.from(existingImports.entries()).map(([base, items]) => {
+        const itemList = Array.from(items).join(', ');
+        return items.size > 0 ? `use ${base}::{${itemList}};` : `use ${base};`;
     });
 
-    if (!importFound) {
+    if (!importFound && importParts[1]) {
         newUseStatements.push(importStatement);
     }
 
     await editor.edit(editBuilder => {
-        if (lastUseLine === 0) {
-            editBuilder.insert(new vscode.Position(0, 0), newUseStatements.join('\n') + '\n');
-        } else {
-            const start = new vscode.Position(lastUseLine, 0);
-            const end = document.lineAt(lastUseLine).range.end;
-            editBuilder.replace(new vscode.Range(start, end), newUseStatements.join('\n'));
-        }
+        const insertionPosition = lastUseLine > 0 ? new vscode.Position(lastUseLine + 1, 0) : new vscode.Position(0, 0);
+        editBuilder.insert(insertionPosition, newUseStatements.join('\n') + '\n');
     });
 }
 
