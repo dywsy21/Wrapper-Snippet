@@ -1,232 +1,159 @@
-	import * as vscode from "vscode";
+import * as vscode from "vscode";
 
-	interface WrapperConfig {
-	key: string;
-	import: string;
-	wrap_template: string;
-	language: string;
-	}
+interface WrapperConfig {
+  key: string;
+  wrap_template: string;
+  language: string;
+}
 
-	let wrapperConfigs: WrapperConfig[] = [];
-	// let orange = vscode.window.createOutputChannel("Orange");
+let wrapperConfigs: WrapperConfig[] = [];
 
-	// Load configurations from settings.json
-	function loadConfig() {
-	const config = vscode.workspace.getConfiguration("rustWrapper");
-	wrapperConfigs = config.get<WrapperConfig[]>("wrappers") || [];
-	}
+// Load configurations from settings.json
+function loadConfig() {
+  const config = vscode.workspace.getConfiguration("WrapperSnippets");
+  wrapperConfigs = config.get<WrapperConfig[]>("wrappers") || [];
+}
 
-	export function activate(context: vscode.ExtensionContext) {
-	loadConfig();
+export function activate(context: vscode.ExtensionContext) {
+	let disposable = vscode.commands.registerCommand('WrapperSnippets.addWrapperConfig', async () => {
+        const settingsUri = vscode.Uri.file(`${vscode.workspace.workspaceFolders![0].uri.fsPath}/.vscode/settings.json`);
+        const document = await vscode.workspace.openTextDocument(settingsUri);
+        const editor = await vscode.window.showTextDocument(document);
 
-	const provider = vscode.languages.registerCompletionItemProvider(
-		{ scheme: "file", language: "*" }, // Apply to all files
-		{
-		provideCompletionItems(
-			document: vscode.TextDocument,
-			position: vscode.Position
-		) {
-			const linePrefix = document
-			.lineAt(position)
-			.text.substring(0, position.character);
-			// Check if the line prefix ends with '.'
-			if (!linePrefix.endsWith(".")) {
-			return undefined;
-			}
+        const text = editor.document.getText();
+        if (!text.includes("WrapperSnippets.wrappers")) {
+            const position = new vscode.Position(text.length, 0);
+			const config = `"WrapperSnippets.wrappers": []`;
+            editor.edit(editBuilder => {
+                editBuilder.insert(position, `\n${config}\n`);
+            });
+        }
+    });
 
-			const completionItems: vscode.CompletionItem[] = [];
-			for (const wrapper of wrapperConfigs) {
-			if (
-				wrapper.language === document.languageId ||
-				wrapper.language === "all"
-			) {
-				const completionItem = new vscode.CompletionItem(
-				wrapper.key,
-				vscode.CompletionItemKind.Snippet
-				);
-				completionItem.detail = `Wrap with ${wrapper.wrap_template}`;
-				completionItem.command = {
-				command: `extension.wrapWith${wrapper.key}`,
-				title: "Wrap Variable",
-				arguments: [position, wrapper], // Pass the position and wrapper as arguments
-				};
-				completionItems.push(completionItem);
-			}
-			}
+    context.subscriptions.push(disposable);
 
-			return completionItems;
-		},
-		},
-		"." // Trigger on dot
-	);
+  loadConfig();
 
-	context.subscriptions.push(provider);
+  const provider = vscode.languages.registerCompletionItemProvider(
+    { scheme: "file", language: "*" }, // Apply to all files
+    {
+      provideCompletionItems(
+        document: vscode.TextDocument,
+        position: vscode.Position
+      ) {
+        const linePrefix = document
+          .lineAt(position)
+          .text.substring(0, position.character);
+        // Check if the line prefix ends with '.'
+        if (!linePrefix.endsWith(".")) {
+          return undefined;
+        }
 
-	wrapperConfigs.forEach((wrapper) => {
-		let disposable = vscode.commands.registerCommand(
-		`extension.wrapWith${wrapper.key}`,
-		(position: vscode.Position, wrapper: WrapperConfig) => {
-			if (position) {
-			wrapVariableWithTemplate(wrapper, position);
-			} else {
-			vscode.window.showErrorMessage("Position is not defined.");
-			}
-		}
-		);
-		context.subscriptions.push(disposable);
-	});
-	}
+        const completionItems: vscode.CompletionItem[] = [];
+        for (const wrapper of wrapperConfigs) {
+          if (
+            wrapper.language === document.languageId ||
+            wrapper.language === "all"
+          ) {
+            const completionItem = new vscode.CompletionItem(
+              wrapper.key,
+              vscode.CompletionItemKind.Snippet
+            );
+            completionItem.detail = `Wrap with ${wrapper.wrap_template}`;
+            completionItem.command = {
+              command: `extension.wrapWith${wrapper.key}`,
+              title: "Wrap Variable",
+              arguments: [position, wrapper], // Pass the position and wrapper as arguments
+            };
+            completionItems.push(completionItem);
+          }
+        }
 
-	function wrapVariableWithTemplate(
-	wrapper: WrapperConfig,
-	position: vscode.Position
-	) {
-	// the position param is the position of the dot
-	const editor = vscode.window.activeTextEditor;
-	if (!editor || !position) {
-		vscode.window.showErrorMessage("No active editor or position found.");
-		return;
-	}
+        return completionItems;
+      },
+    },
+    "." // Trigger on dot
+  );
 
-	const document = editor.document;
+  context.subscriptions.push(provider);
 
-	// Ensure language match
-	if (wrapper.language !== "all" && document.languageId !== wrapper.language) {
-		vscode.window.showWarningMessage(
-		`This wrapper is only applicable for ${wrapper.language} files.`
-		);
-		return;
-	}
+  wrapperConfigs.forEach((wrapper) => {
+    let disposable = vscode.commands.registerCommand(
+      `extension.wrapWith${wrapper.key}`,
+      (position: vscode.Position, wrapper: WrapperConfig) => {
+        if (position) {
+          wrapVariableWithTemplate(wrapper, position);
+        } else {
+          vscode.window.showErrorMessage("Position is not defined.");
+        }
+      }
+    );
+    context.subscriptions.push(disposable);
+  });
+}
 
-	// Use VSCode API to find the word range at the given position
-	const wordRange = document.getWordRangeAtPosition(
-		position.translate(0, -1),
-		/[^\s()[\]{}"']+(\(.*\)|\[.*\]|\{.*\}|\".*\"|'.*')*[^\s()[\]{}"']+/
-	);
-	const prompt_word_range = document.getWordRangeAtPosition(
-		position.translate(0, 1)
-	);
+function wrapVariableWithTemplate(
+  wrapper: WrapperConfig,
+  position: vscode.Position
+) {
+  // the position param is the position of the dot
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || !position) {
+    vscode.window.showErrorMessage("No active editor or position found.");
+    return;
+  }
 
-	if (!wordRange || !prompt_word_range) {
-		vscode.window.showErrorMessage("No valid word found to wrap.");
-		return;
-	}
+  const document = editor.document;
 
-	const word_for_substitute = document.getText(
-		new vscode.Range(wordRange.start, position.translate(0, -1))
-	);
+  // Ensure language match
+  if (wrapper.language !== "all" && document.languageId !== wrapper.language) {
+    vscode.window.showWarningMessage(
+      `This wrapper is only applicable for ${wrapper.language} files.`
+    );
+    return;
+  }
 
-	// // console.log(`Wrapping ${word} with template: ${wrapper.wrap_template}`);
+  // Use VSCode API to find the word range at the given position
+  const wordRange = document.getWordRangeAtPosition(
+    position.translate(0, -1),
+    /[^\s()[\]{}"']+(\(.*\)|\[.*\]|\{.*\}|\".*\"|'.*')*[^\s()[\]{}"']+/
+  );
+  const prompt_word_range = document.getWordRangeAtPosition(
+    position.translate(0, 1)
+  );
 
-	// Ensure the wrap_template contains a placeholder
-	if (!wrapper.wrap_template.includes("{}")) {
-		vscode.window.showErrorMessage(
-		"Wrap template must contain '{}' as a placeholder."
-		);
-		return;
-	}
+  if (!wordRange || !prompt_word_range) {
+    vscode.window.showErrorMessage("No valid word found to wrap.");
+    return;
+  }
 
-	// Apply the wrap template
-	const wrappedText = wrapper.wrap_template.replace("{}", word_for_substitute);
+  const word_for_substitute = document.getText(
+    new vscode.Range(wordRange.start, position.translate(0, -1))
+  );
 
-	console.log(`Wrapped text: ${wrappedText}`);
+  // // console.log(`Wrapping ${word} with template: ${wrapper.wrap_template}`);
 
-	// Replace the identified word with the wrapped text
-	editor
-		.edit((editBuilder) => {
-		editBuilder.replace(
-			new vscode.Range(wordRange.start, prompt_word_range.end),
-			wrappedText
-		);
-		})
-		.then(() => {
-		if (
-			document.languageId === "rust" &&
-			wrapper.import &&
-			wrapper.import.trim() !== ""
-		) {
-			addImportStatement(document, editor, wrapper.import);
-		}
-		});
-	}
+  // Ensure the wrap_template contains a placeholder
+  if (!wrapper.wrap_template.includes("{}")) {
+    vscode.window.showErrorMessage(
+      "Wrap template must contain '{}' as a placeholder."
+    );
+    return;
+  }
 
-	async function addImportStatement(
-	document: vscode.TextDocument,
-	editor: vscode.TextEditor,
-	importStatement: string
-	) {
-	if (document.languageId !== "rust") {
-		return;
-	}
+  // Apply the wrap template
+  const wrappedText = wrapper.wrap_template.replace("{}", word_for_substitute);
 
-	const text = document.getText();
-	const usePattern = /^use\s+([\w:]+)(::\{([\w\s,]*)\})?;/gm;
-	const importTree = new Map<string, any>();
-	let match;
-	let lastUseLine = 0;
 
-	// Parse existing use statements into a tree-like structure
-	function addToTree(base: string[], item: string) {
-		let currentLevel = importTree;
-		for (const part of base) {
-		if (!currentLevel.has(part)) {
-			currentLevel.set(part, new Map());
-		}
-		currentLevel = currentLevel.get(part);
-		}
-		currentLevel.set(item, null);
-	}
+  // Replace the identified word with the wrapped text
+  editor
+    .edit((editBuilder) => {
+      editBuilder.replace(
+        new vscode.Range(wordRange.start, prompt_word_range.end),
+        wrappedText
+      );
+    });
 
-	while ((match = usePattern.exec(text)) !== null) {
-		lastUseLine = document.positionAt(match.index).line;
-		const baseParts = match[1].split("::");
-		const items = match[3]
-		? match[3].split(",").map((item) => item.trim())
-		: [""];
+}
 
-		items.forEach((item) => addToTree(baseParts, item));
-	}
-
-	// Break down the new import statement
-	const importParts = importStatement
-		.replace("use ", "")
-		.replace(";", "")
-		.split("::");
-	const baseParts = importParts.slice(0, -1);
-	const newItem = importParts[importParts.length - 1].replace(/[{}]/g, "");
-
-	// Add the new import to the tree
-	addToTree(baseParts, newItem);
-
-	// Function to recursively build use statements from the tree
-	function buildUseStatements(node: Map<string, any>, prefix: string): string[] {
-		const statements: string[] = [];
-		for (const [key, value] of node.entries()) {
-			if (value && value.size > 0) {
-				const subStatements = buildUseStatements(value, `${prefix}${key}::`);
-				if (subStatements.length > 0) {
-					statements.push(`use ${prefix}${key}::{${subStatements.join(', ')}};`);
-				} else {
-					statements.push(`use ${prefix}${key};`);
-				}
-			} else {
-				if (!statements.includes(`${key}`)) {
-					statements.push(`${key}`);
-				}
-			}
-		}
-		return statements;
-	}
-
-	const newUseStatements = [...new Set(buildUseStatements(importTree, ""))];
-
-	await editor.edit((editBuilder) => {
-		const insertionPosition =
-		lastUseLine > 0
-			? new vscode.Position(lastUseLine + 1, 0)
-			: new vscode.Position(0, 0);
-		editBuilder.insert(insertionPosition, newUseStatements.join("\n") + "\n");
-	});
-	}
-
-	export function deactivate() {}
+export function deactivate() {}
