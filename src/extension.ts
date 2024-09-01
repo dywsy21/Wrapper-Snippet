@@ -199,29 +199,26 @@
 	addToTree(baseParts, newItem);
 
 	// Function to recursively build use statements from the tree
-	function buildUseStatements(
-		node: Map<string, any>,
-		prefix: string
-	): string[] {
+	function buildUseStatements(node: Map<string, any>, prefix: string): string[] {
 		const statements: string[] = [];
 		for (const [key, value] of node.entries()) {
-		if (value && value.size > 0) {
-			const subStatements = buildUseStatements(value, `${prefix}${key}::`);
-			if (subStatements.length > 0) {
-			statements.push(
-				`use ${prefix}${key}::{${subStatements.join(", ")}};`
-			);
+			if (value && value.size > 0) {
+				const subStatements = buildUseStatements(value, `${prefix}${key}::`);
+				if (subStatements.length > 0) {
+					statements.push(`use ${prefix}${key}::{${subStatements.join(', ')}};`);
+				} else {
+					statements.push(`use ${prefix}${key};`);
+				}
 			} else {
-			statements.push(`use ${prefix}${key};`);
+				if (!statements.includes(`${key}`)) {
+					statements.push(`${key}`);
+				}
 			}
-		} else {
-			statements.push(`${key}`);
-		}
 		}
 		return statements;
 	}
 
-	const newUseStatements = buildUseStatements(importTree, "");
+	const newUseStatements = [...new Set(buildUseStatements(importTree, ""))];
 
 	await editor.edit((editBuilder) => {
 		const insertionPosition =
