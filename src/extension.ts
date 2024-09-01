@@ -22,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         const text = editor.document.getText();
         if (!text.includes("WrapperSnippets.wrappers")) {
-            const position = new vscode.Position(text.length, 0);
+            const editPosition = new vscode.Position(document.lineCount, 0);
 			const config = `"WrapperSnippets.wrappers": []`;
             editor.edit(editBuilder => {
                 editBuilder.insert(position, `\n${config}\n`);
