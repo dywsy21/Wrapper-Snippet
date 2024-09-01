@@ -120,40 +120,57 @@ async function addImportStatement(document: vscode.TextDocument, editor: vscode.
 
     const text = document.getText();
     const usePattern = /^use\s+([\w:]+)(::\{([\w\s,]*)\})?;/gm;
-    const importsMap = new Map<string, Set<string>>();
+    const importTree = new Map<string, any>();
     let match;
     let lastUseLine = 0;
 
     // Parse existing use statements into a tree-like structure
+    function addToTree(base: string[], item: string) {
+        let currentLevel = importTree;
+        for (const part of base) {
+            if (!currentLevel.has(part)) {
+                currentLevel.set(part, new Map());
+            }
+            currentLevel = currentLevel.get(part);
+        }
+        currentLevel.set(item, null);
+    }
+
     while ((match = usePattern.exec(text)) !== null) {
         lastUseLine = document.positionAt(match.index).line;
-        const base = match[1];
-        const items = match[3] ? match[3].split(',').map(item => item.trim()) : [];
+        const baseParts = match[1].split('::');
+        const items = match[3] ? match[3].split(',').map(item => item.trim()) : [''];
         
-        if (!importsMap.has(base)) {
-            importsMap.set(base, new Set(items));
-        } else {
-            items.forEach(item => importsMap.get(base)!.add(item));
-        }
+        items.forEach(item => addToTree(baseParts, item));
     }
 
     // Break down the new import statement
-    const importParts = importStatement.replace('use ', '').replace(';', '').split('::{');
-    const newBase = importParts[0];
-    const newItems = importParts.length > 1 ? importParts[1].replace(/[{}]/g, '').split(',').map(item => item.trim()) : [];
-    
-    // Determine if the new import needs to be merged with existing ones
-    if (!importsMap.has(newBase)) {
-        importsMap.set(newBase, new Set(newItems));
-    } else {
-        newItems.forEach(item => importsMap.get(newBase)!.add(item));
+    const importParts = importStatement.replace('use ', '').replace(';', '').split('::');
+    const baseParts = importParts.slice(0, -1);
+    const newItem = importParts[importParts.length - 1].replace(/[{}]/g, '');
+
+    // Add the new import to the tree
+    addToTree(baseParts, newItem);
+
+    // Function to recursively build use statements from the tree
+    function buildUseStatements(node: Map<string, any>, prefix: string): string[] {
+        const statements: string[] = [];
+        for (const [key, value] of node.entries()) {
+            if (value && value.size > 0) {
+                const subStatements = buildUseStatements(value, `${prefix}${key}::`);
+                if (subStatements.length > 0) {
+                    statements.push(`use ${prefix}${key}::{${subStatements.join(', ')}};`);
+                } else {
+                    statements.push(`use ${prefix}${key};`);
+                }
+            } else {
+                statements.push(`${key}`);
+            }
+        }
+        return statements;
     }
 
-    // Reconstruct the use statements in a concise manner
-    const newUseStatements = Array.from(importsMap.entries()).map(([base, items]) => {
-        const itemList = Array.from(items).join(', ');
-        return items.size ? `use ${base}::{${itemList}};` : `use ${base};`;
-    });
+    const newUseStatements = buildUseStatements(importTree, '');
 
     await editor.edit(editBuilder => {
         const insertionPosition = lastUseLine > 0 ? new vscode.Position(lastUseLine + 1, 0) : new vscode.Position(0, 0);
