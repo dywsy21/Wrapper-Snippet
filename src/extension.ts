@@ -37,6 +37,13 @@ export function activate(context: vscode.ExtensionContext) {
 
   loadConfig();
 
+  vscode.workspace.onDidChangeConfiguration((event) => {
+    if (event.affectsConfiguration("WrapperSnippets.wrappers")) {
+      loadConfig();
+      vscode.window.showInformationMessage("WrapperSnippets configuration updated.");
+    }
+  });
+
   const provider = vscode.languages.registerCompletionItemProvider(
     { scheme: "file", language: "*" }, // Apply to all files
     {
