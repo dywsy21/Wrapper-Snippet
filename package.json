@@ -2,7 +2,7 @@
   "name": "wrapper-snippets",
   "displayName": "Wrapper Snippets",
   "description": "A VS Code extension that allows user to customize code snippets that wraps variables. Eg. a.test => Test::new(a)",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "dywsy21",
   "keywords": [
     "wrapper",
@@ -72,5 +72,9 @@
     "tsc": "^2.0.4",
     "watch": "^0.13.0"
   }
-}
+},
+"repository": {
+  "type": "git",
+  "url": "https://github.com/dywsy21/Wrapper-Snippet.git"
+  }
 }
