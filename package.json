@@ -45,9 +45,9 @@
                 "type": "string",
                 "description": "The template for wrapping code. Use {} to represent the variable to wrap."
               },
-              "language": {
+              "fileSuffix": {
                 "type": "string",
-                "description": "The language to apply this wrapper (e.g., rust, javascript, all)."
+                "description": "The file suffix to apply this wrapper (e.g., md for .md files, js for .js files, all)."
               }
             },
             "required": [

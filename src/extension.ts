@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 interface WrapperConfig {
   key: string;
   wrap_template: string;
-  language: string;
+  fileSuffix: string;
 }
 
 let wrapperConfigs: WrapperConfig[] = [];
@@ -62,8 +62,8 @@ export function activate(context: vscode.ExtensionContext) {
         const completionItems: vscode.CompletionItem[] = [];
         for (const wrapper of wrapperConfigs) {
           if (
-            wrapper.language === document.languageId ||
-            wrapper.language === "all"
+            document.fileName.endsWith(`.${wrapper.fileSuffix}`) ||
+            wrapper.fileSuffix === "all"
           ) {
             const completionItem = new vscode.CompletionItem(
               wrapper.key,
@@ -115,10 +115,10 @@ function wrapVariableWithTemplate(
 
   const document = editor.document;
 
-  // Ensure language match
-  if (wrapper.language !== "all" && document.languageId !== wrapper.language) {
+  // Ensure file suffix match
+  if (wrapper.fileSuffix !== "all" && !document.fileName.endsWith(`.${wrapper.fileSuffix}`)) {
     vscode.window.showWarningMessage(
-      `This wrapper is only applicable for ${wrapper.language} files.`
+      `This wrapper is only applicable for files with .${wrapper.fileSuffix} suffix.`
     );
     return;
   }
