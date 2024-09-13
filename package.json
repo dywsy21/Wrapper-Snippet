@@ -24,18 +24,13 @@
         ],
     "configuration": {
       "type": "object",
-            "title": "Your Extension Settings",
-            "properties": {
-                "WrapperSnippets.configureNotice": {
-                    "type": "string",
-                    "markdownDescription": "To configure this extension, please go to [settings.json](command:workbench.action.openSettingsJson).",
-                    "default": "Note: Click the link to open settings.json and add `\"WrapperSnippets.wrappers\": []`."
-                }
-            }
-        },
-      
-      "type": "object",
+      "title": "WrapperSnippets Configuration",
       "properties": {
+        "WrapperSnippets.configureNotice": {
+          "type": "string",
+          "markdownDescription": "To configure this extension, please go to [settings.json](command:workbench.action.openSettingsJson).",
+          "default": "Note: Click the link to open settings.json and add `\"WrapperSnippets.wrappers\": []`."
+        },
         "WrapperSnippets.wrappers": {
           "type": "array",
           "description": "List of code wrappers.",
