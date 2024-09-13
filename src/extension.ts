@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidChangeConfiguration((event) => {
     if (event.affectsConfiguration("WrapperSnippets.wrappers")) {
       loadConfig();
-      vscode.window.showInformationMessage("WrapperSnippets configuration updated.");
+      // vscode.window.showInformationMessage("WrapperSnippets configuration updated.");
     }
   });
 
