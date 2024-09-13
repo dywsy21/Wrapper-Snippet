@@ -20,14 +20,17 @@ export function activate(context: vscode.ExtensionContext) {
         const document = await vscode.workspace.openTextDocument(settingsUri);
         const editor = await vscode.window.showTextDocument(document);
 
-        const text = editor.document.getText();
-        if (!text.includes("WrapperSnippets.wrappers")) {
-            const editPosition = new vscode.Position(document.lineCount, 0);
-			const config = `"WrapperSnippets.wrappers": []`;
-            editor.edit(editBuilder => {
-                editBuilder.insert(position, `\n${config}\n`);
-            });
-        }
+        // const text = editor.document.getText();
+		// // show an info window to display the text
+		// vscode.window.showInformationMessage(text);
+        // if (!text.includes("WrapperSnippets.wrappers")) {
+			
+        //     const editPosition = new vscode.Position(document.lineCount, 0);
+		// 	const config = "\"WrapperSnippets.wrappers\": []";
+        //     editor.edit(editBuilder => {
+        //         editBuilder.insert(editPosition, `\n${config}\n`);
+        //     });
+        // }
     });
 
     context.subscriptions.push(disposable);

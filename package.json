@@ -1,0 +1,80 @@
+{
+  "name": "wrapper-snippets",
+  "displayName": "Wrapper Snippets",
+  "description": "A VS Code extension that allows user to customize code snippets that wraps variables. Eg. a.test => Test::new(a)",
+  "version": "1.0.0",
+  "publisher": "dywsy21",
+  "keywords": [
+    "wrapper",
+    "snippets"
+  ],
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension",
+  "contributes": {
+    "commands": [
+            {
+                "command": "WrapperSnippets.addWrapperConfig",
+                "title": "Add WrapperSnippets Config to settings.json"
+            }
+        ],
+    "configuration": {
+      "type": "object",
+            "title": "Your Extension Settings",
+            "properties": {
+                "WrapperSnippets.configureNotice": {
+                    "type": "string",
+                    "markdownDescription": "To configure this extension, please go to [settings.json](command:workbench.action.openSettingsJson).",
+                    "default": "Note: Click the link to open settings.json and add `\"WrapperSnippets.wrappers\": []`."
+                }
+            }
+        },
+      
+      "type": "object",
+      "properties": {
+        "WrapperSnippets.wrappers": {
+          "type": "array",
+          "description": "List of code wrappers.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "The trigger key for the snippet. This will be displayed after typing '.'"
+              },
+              "wrap_template": {
+                "type": "string",
+                "description": "The template for wrapping code. Use {} to represent the variable to wrap."
+              },
+              "language": {
+                "type": "string",
+                "description": "The language to apply this wrapper (e.g., rust, javascript, all)."
+              }
+            },
+            "required": [
+              "key",
+              "wrap_template",
+              "language"
+            ]
+          }
+        }
+      }
+    },
+
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "vscode:watch": "tsc -p ./tsconfig.json -w"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.47",
+    "@types/vscode": "^1.92.0"
+  },
+  "dependencies": {
+    "tsc": "^2.0.4",
+    "watch": "^0.13.0"
+  }
+}
