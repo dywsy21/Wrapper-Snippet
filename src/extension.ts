@@ -55,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
           .lineAt(position)
           .text.substring(0, position.character);
         // Check if the line prefix ends with '.'
-        if (!linePrefix.endsWith(".")) {
+        if (!linePrefix.trim().endsWith(".")) {
           return undefined;
         }
 
@@ -106,44 +106,41 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
   });
 
-  // Track when the cursor returns to the dot position
-  let lastDotPosition: vscode.Position | null = null;
+  // // Monitor changes in the document to manually trigger completion on backspace to dot
+  // vscode.workspace.onDidChangeTextDocument((event) => {
+  //   const editor = vscode.window.activeTextEditor;
+  //   if (!editor) return;
 
-  vscode.workspace.onDidChangeTextDocument((event) => {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) return;
+  //   const cursorPosition = editor.selection.active;
+  //   const lineText = editor.document.lineAt(cursorPosition).text;
 
-    const cursorPosition = editor.selection.active;
-    const lineText = editor.document.lineAt(cursorPosition).text;
+  //   // Detect if the cursor is back at a dot after a backspace or change
+  //   if (
+  //     cursorPosition.character > 0 &&
+  //     lineText[cursorPosition.character - 1] === "."
+  //   ) {
+  //     // Manually trigger the autocompletion
+  //     vscode.commands.executeCommand("editor.action.triggerSuggest");
+  //   }
+  // });
 
-    // If cursor is on a dot, track its position
-    if (
-      cursorPosition.character > 0 &&
-      lineText[cursorPosition.character - 1] === "."
-    ) {
-      lastDotPosition = cursorPosition;
-    } else {
-      lastDotPosition = null; // Reset if not on a dot
-    }
-  });
 
-  // Monitor text changes to trigger autocompletion after returning to dot and typing another character
-  vscode.workspace.onDidChangeTextDocument((event) => {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || !lastDotPosition) return;
 
-    const cursorPosition = editor.selection.active;
-    
-    // If the cursor is now one character after the dot position, trigger autocompletion
-    if (
-      cursorPosition.isAfter(lastDotPosition) &&
-      cursorPosition.line === lastDotPosition.line &&
-      cursorPosition.character === lastDotPosition.character + 1
-    ) {
-      vscode.commands.executeCommand("editor.action.triggerSuggest");
-      lastDotPosition = null; // Reset after triggering
-    }
-  });
+    vscode.workspace.onDidChangeTextDocument((event) => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) return;
+  
+      const cursorPosition = editor.selection.active;
+      const lineText = editor.document.lineAt(cursorPosition).text;
+  
+      // If cursor is on a dot, track its position
+      if (
+        cursorPosition.character > 0 &&
+        lineText[cursorPosition.character - 1] === "."
+      ) {
+        vscode.commands.executeCommand("editor.action.triggerSuggest");
+      }
+    });
 }
 
 function wrapVariableWithTemplate(

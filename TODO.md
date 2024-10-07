@@ -5,4 +5,8 @@
 
 
 - To run:
-- `npx vsce ...`
+```bash
+tsc -p ./tsconfig.json
+npx vsce package
+npx vsce publish
+```
