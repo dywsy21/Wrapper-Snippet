@@ -10,7 +10,7 @@ This repository contains code for a VS Code extension that facilitates the custo
 
 ## Configuration
 
-The extension utilizes a configuration interface to define how the wrapping should occur. This interface might look like this:
+The extension utilizes a configuration interface to define how the wrapping should occur. This interface looks like this:
 ```typescript
 interface WrapperConfig {
   key: string;

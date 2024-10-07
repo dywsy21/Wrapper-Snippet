@@ -4,4 +4,4 @@ node_modules
 .vscode-test/
 *.vsix
 .aider*
-ext-test/
+ext-test
