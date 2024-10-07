@@ -82,7 +82,10 @@ export function activate(context: vscode.ExtensionContext) {
         return completionItems;
       },
     },
-    "." // Trigger on dot
+    ".", // Trigger on dot
+    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",  // All letters
+    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",  // Capital letters
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",  // Numbers
   );  
     
   context.subscriptions.push(provider);
@@ -126,21 +129,21 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 
-    vscode.workspace.onDidChangeTextDocument((event) => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) return;
+    // vscode.workspace.onDidChangeTextDocument((event) => {
+    //   const editor = vscode.window.activeTextEditor;
+    //   if (!editor) return;
   
-      const cursorPosition = editor.selection.active;
-      const lineText = editor.document.lineAt(cursorPosition).text;
+    //   const cursorPosition = editor.selection.active;
+    //   const lineText = editor.document.lineAt(cursorPosition).text;
   
-      // If cursor is on a dot, track its position
-      if (
-        cursorPosition.character > 0 &&
-        lineText[cursorPosition.character - 1] === "."
-      ) {
-        vscode.commands.executeCommand("editor.action.triggerSuggest");
-      }
-    });
+    //   // If cursor is on a dot, track its position
+    //   if (
+    //     cursorPosition.character > 0 &&
+    //     lineText[cursorPosition.character - 1] === "."
+    //   ) {
+    //     vscode.commands.executeCommand("editor.action.triggerSuggest");
+    //   }
+    // });
 }
 
 function wrapVariableWithTemplate(
