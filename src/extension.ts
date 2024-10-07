@@ -83,8 +83,8 @@ export function activate(context: vscode.ExtensionContext) {
       },
     },
     "." // Trigger on dot
-  );
-
+  );  
+    
   context.subscriptions.push(provider);
 
   wrapperConfigs.forEach(async (wrapper) => {

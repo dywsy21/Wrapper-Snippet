@@ -8,7 +8,6 @@ This repository contains code for a VS Code extension that facilitates the custo
 - Configure the extension to use specific templates for different programming languages.
 - Trigger the wrapping command from the command palette or just press enter.
 
-
 ## Configuration
 
 The extension utilizes a configuration interface to define how the wrapping should occur. This interface might look like this:
