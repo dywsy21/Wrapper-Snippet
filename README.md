@@ -16,11 +16,11 @@ The extension utilizes a configuration interface to define how the wrapping shou
 interface WrapperConfig {
   key: string;
   wrap_template: string;
-  language: string;
+  fileSuffix: string;
 }
 ```
 
-The `key` field is used to identify the configuration, the `wrap_template` field is the template used to wrap the variable, and the `language` field specifies the programming language for which the configuration is valid.
+The `key` field is used to identify the configuration, the `wrap_template` field is the template used to wrap the variable, and the `fileSuffix` field specifies the file with which suffix the configuration is valid.
 
 The format of the `wrap_template` field is a string that contains the variable name surrounded by curly braces. For example, the template `Test::new({})` would wrap the variable `a` as `Test::new(a)`.
 
@@ -33,6 +33,10 @@ The format of the `wrap_template` field is a string that contains the variable n
 ## Contribution
 
 Contributions are welcome! Please submit a pull request or open an issue to discuss the changes you would like to make.
+
+## Repository
+[Wrapper Snippet](https://github.com/dywsy21/Wrapper-Snippet.git)
+
 
 ## License
 

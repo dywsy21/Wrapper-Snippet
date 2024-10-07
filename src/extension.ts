@@ -87,7 +87,12 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(provider);
 
-  wrapperConfigs.forEach((wrapper) => {
+  wrapperConfigs.forEach(async (wrapper) => {
+    // first check if the command is already registered, if so, continue
+    if ((await vscode.commands.getCommands(true)).includes(`extension.wrapWith${wrapper.key}`)) {
+      return;
+    }
+
     let disposable = vscode.commands.registerCommand(
       `extension.wrapWith${wrapper.key}`,
       (position: vscode.Position, wrapper: WrapperConfig) => {
