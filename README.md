@@ -1,4 +1,4 @@
-# Var Wrapper Snippets Customization 2
+# Wrapper Snippet
 
 This repository contains code for a VS Code extension that facilitates the customization of code snippets. It includes a feature that allows users to wrap selected code using a flexible template mechanism. The extension can be configured to use specific templates, making it versatile for different programming languages.
 
